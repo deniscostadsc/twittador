@@ -1,5 +1,5 @@
 #labels Featured,Phase-Deploy
-#PageName Instalação
+#Sumary Instalação
 = Instalação =
 Como instalar o twittador
 
