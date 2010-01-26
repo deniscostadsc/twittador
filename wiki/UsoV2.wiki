@@ -1,19 +1,7 @@
-#summary One-sentence summary of this page.
+#summary Uso do twittador (versão 2.2-beta).
 #labels Featured,Phase-Deploy
 
-= Introduction =
-
-Add your content here.
-
-
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
-
-
+{{{
 Twittador [opção] <parametros>
 
 sem parâmetro		- Posta no Twitter
@@ -27,3 +15,4 @@ sem parâmetro		- Posta no Twitter
 [-U <perfil>]		- Para de seguir o perfil no Twitter.
 [-V|--version]		- Mostra Versão.
 [-h|--help]		- Mostra mensagem de ajuda.
+}}}
