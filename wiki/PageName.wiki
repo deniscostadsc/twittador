@@ -1,9 +1,0 @@
-#summary oi
-#labels Featured,Phase-Deploy
-
-= Instalação =
-Como instalar o twittador
-
-$ tar -jxvf twittador<versão>.tbz2<br />
-$ cd twittador<versão><br />
-$ sudo ./install.sh
