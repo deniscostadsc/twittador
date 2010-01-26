@@ -1,2 +1,10 @@
-#summary Instalação do twittador (versão 2.2-beta)
+#summary Instalação do twittador (versão 2.2-beta).
 #labels Featured,Phase-Deploy
+
+*Instalação*
+
+{{{
+$ tar-jxvf twittador<versão>.tbz2
+$ cd twittador<versão>
+$ sudo ./install.sh
+}}}
