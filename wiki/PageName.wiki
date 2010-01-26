@@ -1,7 +1,5 @@
 #labels Featured,Phase-Deploy
-#Instalação
-
-= Introduction =
+= Instalação =
 Como instalar o twittador
 
 $ tar -jxvf twittador<versão>.tbz2<br />
