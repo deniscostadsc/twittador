@@ -1,19 +1,9 @@
-#summary One-sentence summary of this page.
+#summary Instalação
 #labels Featured,Phase-Deploy
 
 = Introduction =
 Como instalar o twittador
 
-
-= Details =
-*Instalação*
-
 $ tar -jxvf twittador<versão>.tbz2
 $ cd twittador<versão>
 $ sudo ./install.sh
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
-
