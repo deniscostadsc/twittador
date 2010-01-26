@@ -1,8 +1,7 @@
 #summary Uso do twittador (versão 2.2-beta).
 #labels Featured,Phase-Deploy
 
-{{{
-Twittador [opção] <parametros>
+`Twittador [opção] <parametros>
 
 sem parâmetro		- Posta no Twitter
 <perfil>		- Mostra os ultimos posts do perfil.
@@ -14,5 +13,4 @@ sem parâmetro		- Posta no Twitter
 [-F <perfil>]		- Segue o perfil no Twitter.
 [-U <perfil>]		- Para de seguir o perfil no Twitter.
 [-V|--version]		- Mostra Versão.
-[-h|--help]		- Mostra mensagem de ajuda.
-}}}
+[-h|--help]		- Mostra mensagem de ajuda.`
