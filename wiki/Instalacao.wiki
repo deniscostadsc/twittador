@@ -1,4 +1,4 @@
-#summary Instalação do twittador.
+#summary Instalação do twittador(versão 2.1).
 #labels Featured,Phase-Deploy
 
 *Instalação*
