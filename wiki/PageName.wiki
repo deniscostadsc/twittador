@@ -4,6 +4,6 @@
 = Introduction =
 Como instalar o twittador
 
-$ tar -jxvf twittador<versão>.tbz2
-$ cd twittador<versão>
+$ tar -jxvf twittador<versão>.tbz2<br />
+$ cd twittador<versão><br />
 $ sudo ./install.sh
