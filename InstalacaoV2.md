@@ -1,0 +1,7 @@
+**Instalação**
+
+```
+$ tar-jxvf twittador<versão>.tbz2
+$ cd twittador<versão>
+$ sudo ./install.sh
+```

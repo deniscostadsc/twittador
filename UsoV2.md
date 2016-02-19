@@ -1,0 +1,16 @@
+
+```
+Twittador [opção] <parametros>
+
+sem parâmetro		- Posta no Twitter
+<perfil>		- Mostra os ultimos posts do perfil.
+[-l]			- Mostra os os ultimos posts dos perfil que você segue.
+[-m]			- Mostra as menções ao seu perfil
+[-f <arquivo>]		- Posta as frases do arquivo.
+[-s <termo_pesquisado>]	- Pesquisa termo no Twitter.
+[-r]			- Remove um tweet.
+[-F <perfil>]		- Segue o perfil no Twitter.
+[-U <perfil>]		- Para de seguir o perfil no Twitter.
+[-V|--version]		- Mostra Versão.
+[-h|--help]		- Mostra mensagem de ajuda.
+```

@@ -1,0 +1,11 @@
+
+```
+Twittador [opção] <parametros>
+
+<perfil_pesquisado>	- Mostra os ultimos posts do perfil.
+[-l]			- Mostra os os ultimos posts dos perfil que você segue.
+[-f <arquivo_frases>]	- Posta as frases do arquivo.
+[-s <termo_pesquisado>]	- Pesquisa termo no twitter
+[-V|--version]		- Mostra Versão.
+[-h|--help]		- Mostra mensagem de ajuda.
+```
