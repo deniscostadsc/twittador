@@ -1,0 +1,667 @@
+#!/bin/bash
+#
+# twittador - Programa que gerencia um perfil no twitter.
+#
+# Autor: Denis S. Costa - deniscostadsc@gmail.com
+# twitter: @deniscostadsc
+#
+# ------------------------------------------------------------------------
+#
+# Dependências:
+# - bash (O modo como são lido $senha e etc., é exclusivo do Bash);
+# - curl;
+# - sed.
+#
+# ------------------------------------------------------------------------
+#
+# Versionamento:
+#
+# Versão 2.2 - Status: em desenvolvimento
+# - Adicionado suporte a parar de seguir perfis. Opção -U
+# - Adicionado suporte a seguir perfis. Opção -F
+# - Adicionado suporte a exclusão de tweets. Opção -l;
+# - Adicionado suporte a busca de menções no twitter. Opção -m
+# - Melhorado formatação da data (retirado espaço depois do "(" e antes ")");
+# - Verificação da contagem do caracteres não é mais feita como função;
+# - Verificação das dependências não é feita mas como função;
+# - Arrumado bug da pesquisa com "#" na frente;
+# - Traduzido os meses e os dias da semana para português.
+#
+# Versão 2.1
+# - Adicionado contagem de caracteres na postagem do arquivo;
+# - Verfica a existência do paramêtro $2 quando usa a opçao -s.
+#
+# Versão 2.0
+# - Adicionado suporte a leitura de tweets de um $perfil;
+# - Adicionado opção post de um arquivo texto com a opção -f;
+# - Adicionado opção que pesquisa no twitter -s;
+# - Adicionado opção que mostra tweets do que você segue -l;
+# - Adicionado opção que mostra versão -V | --version;
+# - Adicionado opção de ajuda com a opção -h | --help;
+# - Adicionado verificação de tweet vazio;
+# - Adicionado fluxograma;
+# - Melhorado a nomeação das variaveis;
+# - URLs agora estão em variaveis;
+# - Todas as informações da internet são busacadas com curl.
+#
+# Versão 1.0
+# - Versão inicial, que apenas posta no twitter
+#
+# ------------------------------------------------------------------------
+#
+# Fluxograma:
+#
+#	+----------------+
+#	| Sem paramêtro? |
+#	+----------------+
+#	      | sim    +-------+
+#	      o------> | Posta |
+#	  não |	       +-------+
+#	      V
+#	+-------------------------------+
+#	| parametro1 = -V ou --version? |
+#	+-------------------------------+
+#	      | sim    +---------------+
+#	      o------> | Mostra versão |
+#	  não |	       +---------------+
+#	      V
+#	+----------------------------+
+#	| parametro1 = -h ou --help? |
+#	+----------------------------+
+#	      | sim    +--------------+
+#	      o------> | Mostra ajuda |
+#	  não |	       +--------------+
+#	      V
+#	+------------------+
+#	| parametro1 = -f? |
+#	+------------------+
+#	      | sim    +----------------------+      sim   +------------------+
+#	      o------> | existe ou é legivel? | --o------> | Posta do arquivo |
+#	  não |	       +----------------------+   |	   +------------------+
+#	      V				      não V
+#	+----------------- +	     +----------------------+
+#	| parametro1 = -s? |	     | Mostra Mensagem erro |
+#	+----------------- +	     +----------------------+
+#	      | sim    +----------+
+#	      o------> | Pesquisa |
+#	  não |	       +----------+
+#	      V
+#	+-----------------+
+#	| parametro1 = -l |
+#	+-----------------+
+#	      | sim    +-----------------------------------+
+#	      o------> | Mostra Tweets dos perfis seguidos |
+#	  não |	       +-----------------------------------+
+#	      V
+#	+-----------------+
+#	| parametro1 = -m |
+#	+-----------------+
+#	      | sim    +------------------------------+
+#	      o------> | Mostra menções ao seu perfil |
+#	  não |	       +------------------------------+
+#	      V
+#	+-----------------+
+#	| parametro1 = -r |
+#	+-----------------+
+#	      | sim    +---------------+
+#	      o------> | Exclui tweets |
+#	  não |	       +---------------+
+#	      V
+#	+-----------------+
+#	| parametro1 = -F |
+#	+-----------------+
+#	      | sim    +--------------+
+#	      o------> | Segue perfil |
+#	  não |	       +--------------+
+#	      V
+#	+-----------------+
+#	| parametro1 = -U |
+#	+-----------------+
+#	      | sim    +-----------------------+
+#	      o------> | Para de seguir perfil |
+#	  não |	       +-----------------------+
+#	      V
+#	+------------------------------+
+#	| parametro1 = opção inválida? |
+#	+------------------------------+
+#	      | sim    +----------------------+
+#	      o------> | Mostra Mensagem erro |
+#	  não |	       +----------------------+
+#	      V
+#	+---------------------------------------+
+#	| Mostra os Tweets do Perfil parametro1 |
+#	+---------------------------------------+
+#
+# ------------------------------------------------------------------------
+#
+# Limitações:
+# - Só os tweets mais recentes são passiveis de manipulação.
+#
+# Bugs:
+# - Formatação não funciona se tiver quebra de linha no post.
+#
+# ------------------------------------------------------------------------
+#
+# TODO:
+# - Tratar os caracteres decimais "ASCII" "desconhecidos" (ex.: &#1689;);
+# - Tratar as quebras de linhas do tweets;
+# - Colocar o nome dos usuários na pesquisa;
+# - Adicionar verificação se curl funcionou;
+# - Adicionar suporte a quantidade de tweets a mostrar
+# - Tratar número para excluir tweet. Hoje não verifica se é número mesmo.
+#
+
+##########################################################################
+#----------Variáveis-----------------------------------------------------#
+##########################################################################
+
+url_posta="http://twitter.com/statuses/update.xml"
+url_usuario="http://twitter.com/statuses/user_timeline.rss?screen_name="
+url_amigos="http://twitter.com/statuses/friends_timeline.rss"
+url_mencoes="http://twitter.com/statuses/mentions.rss"
+url_pesquisa="http://search.twitter.com/search.rss?q="
+url_exclui="http://twitter.com/statuses/destroy/"
+url_seguir="http://twitter.com/friendships/create/"
+url_nao_seguir="http://twitter.com/friendships/destroy/"
+
+versao="twittador 2.2 - Status: em desenvolvimento
+Desenvolvido e mantido por Denis S. Costa - deniscostadsc@gmail.com"
+
+newIFS="
+"
+
+##########################################################################
+#----------Funções-------------------------------------------------------#
+##########################################################################
+
+leitura_login ()
+{
+	read -p    "Usuario: " usuario
+	verifica_login "$usuario"
+        read -s -p "Senha: "   senha
+        verifica_login "$senha"
+
+        echo ""
+}
+
+verifica_login ()
+{
+if [ ! $1 ]; then
+        echo "Digite login/senha"
+        exit 1
+fi
+}
+
+filtra_texto ()
+{
+
+#
+# Em sistemas configurados corretamente para o português
+# a tradução de alguns caracteres não é necessária.
+#
+
+sed 	'4d
+	8d
+	/\(<\/\?pubDate>\|<\/\?title>\)/!d
+	/<title>/{h;d;}
+	/<pubDate>/{G;}
+	s/\+0000<\/pubDate>\n//
+	s/<title>/) /
+	s/<pubDate>/(/
+	s/<\/title>//
+	s/  \+/ /g
+	s/^ *//
+	s/^(Sat/(Sab/
+	s/^(Sun/(Dom/
+	s/^(Mon/(Seg/
+	s/^(Tue/(Ter/
+	s/^(Wed/(Qua/
+	s/^(Thu/(Qui/
+	s/^(Fri/(Sex/
+	s/( /(/g
+	s/ )/)/g
+	s/^\(.\{9\}\)Feb\(.*\)/\1Fev\2/
+	s/^\(.\{9\}\)Apr\(.*\)/\1Abr\2/
+	s/^\(.\{9\}\)May\(.*\)/\1Mai\2/
+	s/^\(.\{9\}\)Aug\(.*\)/\1Ago\2/
+	s/^\(.\{9\}\)Sep\(.*\)/\1Set\2/
+	s/^\(.\{9\}\)Oct\(.*\)/\1Out\2/
+	s/^\(.\{9\}\)Dec\(.*\)/\1Dez\2/
+	s/&euro;/€/g
+	s/&sbquo;/‚/g
+	s/&fnof;/ƒ/g
+	s/&bdquo;/„/g
+	s/&hellip;/…/g
+	s/&dagger;/†/g
+	s/&Dagger;/‡/g
+	s/&circ;/ˆ/g
+	s/&permil;/‰/g
+	s/&Scaron;/Š/g
+	s/&lsaquo;/‹/g
+	s/&OElig;/Œ/g
+	s/&lsquo;/‘/g
+	s/&rsquo;/’/g
+	s/&ldquo;/“/g
+	s/&rdquo;/”/g
+	s/&bull;/•/g
+	s/&ndash;/–/g
+	s/&mdash;/—/g
+	s/&tilde;/˜/g
+	s/&trade;/™/g
+	s/&scaron;/š/g
+	s/&rsaquo;/›/g
+	s/&oelig;/œ/g
+	s/&yuml;/Ÿ/g
+	s/&iexcl;/¡/g
+	s/&cent;/¢/g
+	s/&pound;/£/g
+	s/&curren;/¤/g
+	s/&yen;/¥/g
+	s/&brvbar;/¦/g
+	s/&sect;/§/g
+	s/&uml;/¨/g
+	s/&copy;/©/g
+	s/&ordf;/ª/g
+	s/&laquo;/«/g
+	s/&not;/¬/g
+	s/&reg;/®/g
+	s/&macr;/¯/g
+	s/&deg;/°/g
+	s/&plusmn;/±/g
+	s/&sup2;/²/g
+	s/&sup3;/³/g
+	s/&acute;/´/g
+	s/&micro;/µ/g
+	s/&para;/¶/g
+	s/&middot;/·/g
+	s/&cedil;/¸/g
+	s/&sup1;/¹/g
+	s/&ordm;/º/g
+	s/&raquo;/»/g
+	s/&frac14;/¼/g
+	s/&frac12;/½/g
+	s/&frac34;/¾/g
+	s/&iquest;/¿/g
+	s/&apos;/´/g
+	s/&quot;/"/g
+	s/&gt;/>/g
+	s/&lt;/</g
+	s/&amp;gt;/>/g
+	s/&amp;lt;/</g
+	s/&amp;/\&/g
+	s/&#039;/\x27/g
+	s/&#160;/ /g
+	s/&#163;/£/g
+	s/&#165;/¥/g
+	s/&#169;/©/g
+	s/&#170;/ª/g
+	s/&#172;/¬/g
+	s/&#176;/°/g
+	s/&#180;/´/g
+	s/&#186;/º/g
+	s/&#187;/»/g
+	s/&#192;/À/g
+	s/&#193;/Á/g
+	s/&#194;/Â/g
+	s/&#195;/Ã/g
+	s/&#196;/Ä/g
+	s/&#197;/Å/g
+	s/&#199;/Ç/g
+	s/&#200;/È/g
+	s/&#201;/É/g
+	s/&#202;/Ê/g
+	s/&#203;/Ë/g
+	s/&#204;/Ì/g
+	s/&#205;/Í/g
+	s/&#206;/Î/g
+	s/&#207;/Ï/g
+	s/&#208;/Ð/g
+	s/&#209;/Ñ/g
+	s/&#210;/Ò/g
+	s/&#211;/Ó/g
+	s/&#212;/Ô/g
+	s/&#213;/Õ/g
+	s/&#214;/Ö/g
+	s/&#215;/×/g
+	s/&#216;/Ø/g
+	s/&#217;/Ù/g
+	s/&#218;/Ú/g
+	s/&#219;/Û/g
+	s/&#220;/Ü/g
+	s/&#221;/Ý/g
+	s/&#222;/Þ/g
+	s/&#223;/ß/g
+	s/&#224;/à/g
+	s/&#225;/á/g
+	s/&#226;/â/g
+	s/&#227;/ã/g
+	s/&#228;/ä/g
+	s/&#229;/å/g
+	s/&#230;/æ/g
+	s/&#231;/ç/g
+	s/&#232;/è/g
+	s/&#233;/é/g
+	s/&#234;/ê/g
+	s/&#235;/ë/g
+	s/&#236;/ì/g
+	s/&#237;/í/g
+	s/&#238;/î/g
+	s/&#239;/ï/g
+	s/&#240;/ð/g
+	s/&#241;/ñ/g
+	s/&#242;/ò/g
+	s/&#243;/ó/g
+	s/&#244;/ô/g
+	s/&#245;/õ/g
+	s/&#246;/ö/g
+	s/&#248;/ø/g
+	s/&#249;/ù/g
+	s/&#250;/ú/g
+	s/&#251;/û/g
+	s/&#252;/ü/g
+	s/&#253;/ý/g
+	s/&#254;/þ/g
+	s/&#255;/ÿ/g
+	s/&#936;/Ψ/g
+	s/&#1641;/٩/g
+	s/&#1782;/۶/g
+	s/&#8211;/–/g
+	s/&#8212;/—/g
+	s/&#8216;/‘/g
+	s/&#8217;/’/g
+	s/&#8220;/“/g
+	s/&#8221;/”/g
+	s/&#8226/•/g
+	s/&#8230;/…/g
+	s/&#8236;//g
+	s/&#8234;//g
+	s/&#9472;/─/g
+	s/&#9532;/┼/g
+	s/&#9600;/▀/g
+	s/&#9604;/▀/g
+	s/&#9608;/█/g
+	s/&#9786;/:-)/g
+	s/&#9800;/♈/g
+	s/&#9801;/♉/g
+	s/&#9825;/♡/g
+	s/&#9829;/♥/g
+	s/&#10003;/✓/g'
+
+}
+
+ajuda ()
+{
+echo "Twittador [opção] <parametros>"
+echo ""
+echo "sem parâmetro		- Posta no Twitter
+<perfil>		- Mostra os ultimos posts do perfil.
+[-l]			- Mostra os os ultimos posts dos perfil que você segue.
+[-m]			- Mostra as menções ao seu perfil
+[-f <arquivo>]		- Posta as frases do arquivo.
+[-s <termo_pesquisado>]	- Pesquisa termo no Twitter.
+[-r]			- Remove um tweet.
+[-F <perfil>]		- Segue o perfil no Twitter.
+[-U <perfil>]		- Para de seguir o perfil no Twitter.
+[-V|--version]		- Mostra Versão.
+[-h|--help]		- Mostra mensagem de ajuda."
+
+exit 0
+}
+
+##########################################################################
+#---------- Programa principal-------------------------------------------#
+##########################################################################
+
+# Verifica dependências do twittador
+for i in curl sed bash ; do
+	if ! which $i > /dev/null 2>&1; then
+		echo "Para executar o twittador é necessário o programa $i"
+		exit 1
+	fi
+done
+
+# Se não forem passado parâmetros, posta
+if [ ! $1 ]; then
+	# Lê a frase a ser postada no twitter
+	read -p    "Tweet: "   tweet
+	# Verifica contagem caracteres
+	contagem_char=$(echo -n $tweet | wc -m)
+	if [ $contagem_char -gt 140 ]; then
+		echo "Os tweets só podem ter até 140 caracteres!"
+		echo "Seu tweet possui $contador caracteres!!!"
+		exit 1
+	elif [ $contagem_char -lt 1 ]; then
+		echo "Seu tweet está vazio!!!"
+		exit 1
+	fi
+
+	leitura_login
+	# Posta
+	curl -u "$usuario":"$senha" \
+		-d status="$tweet"\
+		$url_posta > /dev/null 2>&1
+
+        exit 0
+fi
+
+# Se for passado argumento cai no case
+case $1 in
+	-V|--version)
+		echo "$versao"
+		exit 0
+	;;
+
+        -h|--help)
+                ajuda
+        ;;
+
+	-f )
+	# Posta frases do arquivo passado como $2
+		arquivo=$2
+
+                if [ -n $arquivo ]; then
+                        # Verifica se arquivo existe
+                        [ ! -e $arquivo ] && {
+				echo "O arquivo \"$arquivo\" não foi encontrado!"
+                                exit 1
+                        }
+			# Verifica se o arquivo é legível
+			[ ! -r $arquivo ] && {
+                                echo "Permissão negada!!!"
+				echo "Verifique as permissões de leitura de $arquivo"
+                                exit 1
+                        }
+
+                        leitura_login
+
+                        echo "Postando no Twitter..."
+			# Muda o IFS para pegar as linhas do arquivo
+			oldIFS=$IFS
+			IFS=$newIFS
+			contador=1
+			for linha_tweet in $(cat $arquivo); do
+
+				contagem_char=$(echo -n $linha_tweet | wc -m)
+				if [ $contagem_char -gt 140 ]; then
+					echo "A linha $contador tem mais de 140 caracteres!"
+					continue
+				elif [ $contagem_char -lt 1 ]; then
+					continue
+				fi
+				contador=$((contador + 1))
+
+				curl \
+					-u "$usuario":"$senha" \
+					-d status="$linha_tweet"\
+					$url_posta \
+					> /dev/null 2>&1
+			done
+			IFS=$oldIFS
+
+			exit 0
+                else
+                        echo "Especifique o arquivo"
+                        echo "Para ajuda, digite: twittador -h"
+                        exit 1
+                fi
+        ;;
+
+	-s )
+	# Pesquisa no Twitter o argumento $2
+		if [ ! $2 ] ; then
+			echo "Digite o termo a ser pesquisado no twitter"
+			echo "Para ajuda, digite: twittador -h"
+			exit 1
+		fi
+
+		pesquisa=$(echo $2 | sed s/^#/%23/)
+
+		curl ${url_pesquisa}${pesquisa} \
+			2> /dev/null |\
+			filtra_texto
+		exit 0
+	;;
+
+	-l )
+	# Mostra os tweets dos seus amigos
+
+		leitura_login
+		echo ""
+
+		curl \
+			-u $usuario:$senha \
+			$url_amigos \
+			2> /dev/null |\
+			filtra_texto
+	;;
+
+	-m )
+	# Mostra quem está falando de você
+
+		leitura_login
+		echo ""
+
+		curl \
+			-u $usuario:$senha \
+			$url_mencoes \
+			2> /dev/null |\
+			filtra_texto
+	;;
+
+	-r )
+		# É dada o nome do perfil para apagar
+		read -p "Digite um perfil para excluir um tweet: " perfil
+		# Baixa o perfil rss do perfil e joga em arquivo
+		curl "${url_usuario}${perfil}" \
+			2> /dev/null \
+			> /tmp/tmp_twittador_perfil_XXXXXXXXXX
+		clear
+
+		# Pega os id dos tweets e joga no arquivo
+		sed '/<guid>/!d;s/<[^>]*>//g;s/.*\///g' \
+			/tmp/tmp_twittador_perfil_XXXXXXXXXX > \
+			/tmp/tmp_twittador_ids_XXXXXXXXXX
+
+		# Mostra na tela, formata numera e mostra na tela
+		echo "Excluindo tweets de $perfil"
+		echo ""
+		cat /tmp/tmp_twittador_perfil_XXXXXXXXXX |\
+			filtra_texto |\
+			tee /tmp/tmp_twittador_perfil_formatado_XXXXXXXXXX |\
+			nl
+
+		# É feita a contagem dos tweets para verificar a escolha
+		# do usuário. Isso impede que ele escolha apagar o tweet
+		# 21 havendo apenas 20 possibilidades.
+		contagem_tweets=$(cat /tmp/tmp_twittador_ids_XXXXXXXXXX | wc -l)
+
+		echo ""
+		read -p "Digite o número do tweet a ser excluido: " num_exclui
+
+		if [ $num_exclui -gt $contagem_tweets -o $num_exclui -lt 1 ]; then
+			echo "Número inválido!!!"
+			exit 1
+		fi
+
+		id_exclui=$(sed "$num_exclui!d" /tmp/tmp_twittador_ids_XXXXXXXXXX)
+		id_exclui="$id_exclui.xml"
+
+		sed "$num_exclui!d" /tmp/tmp_twittador_perfil_formatado_XXXXXXXXXX
+
+		echo ""
+		read -p "Tem certeza que deseja excluir? (s|n): " confirmacao
+
+		# Se confirmação positiva exclui
+		if [ "$confirmacao" = s -o "$confirmacao" = S ]; then
+			leitura_login
+			curl \
+				-u "$usuario":"$senha" \
+				--http-request DELETE \
+				${url_exclui}${id_exclui} \
+				> /dev/null 2>&1
+		fi
+
+		# Exclui os arquivos temporários
+		rm /tmp/tmp_twittador_perfil_formatado_XXXXXXXXXX 2> /dev/null
+		rm /tmp/tmp_twittador_perfil_XXXXXXXXXX 2> /dev/null
+		rm /tmp/tmp_twittador_ids_XXXXXXXXXX 2> /dev/null
+
+		exit 0
+	;;
+
+	-F )
+		if [ ! $2 ] ; then
+			echo "Digite o perfil para seguir no twitter"
+			echo "Para ajuda, digite: twittador -h"
+			exit 1
+		fi
+
+		perfil="$2.xml"
+
+		leitura_login
+
+		curl \
+			-u "$usuario":"$senha" \
+			-d "" ${url_seguir}${perfil} \
+			> /dev/null 2> /dev/null
+
+		exit 0
+	;;
+
+	-U )
+		if [ ! $2 ] ; then
+			echo "Digite o perfil para parar de seguir no twitter"
+			echo "Para ajuda, digite: twittador -h"
+			exit 1
+		fi
+
+		perfil="$2.xml"
+
+		leitura_login
+
+		curl \
+			-u "$usuario":"$senha" \
+			-d "" ${url_nao_seguir}${perfil} \
+			> /dev/null 2> /dev/null
+
+		exit 0
+	;;
+
+	-* )
+	# As opções diferentes das anteriores são inválidas
+		echo "Opção desconhecida"
+		echo "Para ajuda, digite: twittador -h"
+
+		exit 0
+	;;
+
+	* )
+	# Mostra os 20 últimos tweets do perfil passados em $2
+		perfil=$1
+
+		curl "${url_usuario}${perfil}" \
+			2> /dev/null | \
+			filtra_texto
+		exit 0
+	;;
+esac

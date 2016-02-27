@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# encurlta - encurtador de url pelo bit.ly
+#
+# versão 0
+#
+
+if [ ! $1 ]; then
+	echo "Digite a url a ser encurtada"
+	exit 1
+fi
+
+url=$1
+
+curl http://bit.ly/?s=\&keyword=\&url=$url 2> /dev/null | sed '/shortened-url/!d;s/.*".*".*"\(.*\)".*/\1/'
+

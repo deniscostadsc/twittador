@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# Programa instalador do Twittador
+#
+# Versão 1.2
+# - Adicionado suporte a instalação do encurlta.
+#
+
+# Variaveis
+user=$(whoami)
+diretorio="$(dirname $(echo $0))/"
+
+# Verifica usuário
+if [ $user != root ]; then
+	echo "É preciso executar este programa como root"
+	exit 1
+fi
+
+# Verifica as dependências do twittador
+for i in curl sed bash ; do
+        if ! which $i > /dev/null 2>&1; then
+                echo "Para executar o twittador é necessário o programa $i"
+                exit 1
+        fi
+done
+
+# Adiciona permissão de execução se necessário
+if [ ! -x twittador ]; then
+	chmod +x ${diretorio}twittador
+fi
+
+if [ ! -x encurlta ]; then
+	chmod +x ${diretorio}encurlta
+fi
+
+# Copia para o local certo
+cp ${diretorio}twittador ${diretorio}encurlta /usr/bin/
